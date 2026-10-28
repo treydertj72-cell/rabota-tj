@@ -206,6 +206,11 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     if (isSubmitting || isSuccess) return;
     setErrorMsg('');
 
+    if (currentUser?.isBlocked) {
+      setErrorMsg(`Ваш аккаунт заблокирован администратором. Причина: ${currentUser.blockedReason || 'Нарушение правил'}. Публикация объявлений невозможна.`);
+      return;
+    }
+
     let finalTitle = title.trim();
     if (isTaxi && !finalTitle) {
       finalTitle = type === 'taxi_driver'

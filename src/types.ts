@@ -91,6 +91,7 @@ export interface Listing {
 }
 
 export type UserRole = 'worker' | 'employer' | 'both';
+export type AccountRole = 'owner' | 'admin' | 'user';
 
 export interface UserProfile {
   id: string;
@@ -99,6 +100,8 @@ export interface UserProfile {
   avatarUrl?: string;
   phone?: string;
   role: UserRole;
+  accountRole?: AccountRole;
+  isOwner?: boolean;
   countryCode?: CountryCode;
   region?: string;
   city?: string;
@@ -107,6 +110,7 @@ export interface UserProfile {
   isAdmin?: boolean;
   isBlocked?: boolean;
   blockedReason?: string;
+  blockedAt?: string;
   createdAt: string;
 }
 
@@ -129,7 +133,10 @@ export interface Report {
   targetTitle?: string;
   reason: string;
   details?: string;
-  status: 'pending' | 'resolved' | 'dismissed';
+  status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
+  resolutionNotes?: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
   createdAt: string;
 }
 
@@ -156,9 +163,11 @@ export interface OwnerAd {
   description: string;
   imageUrl: string;
   linkUrl: string;
+  buttonText?: string;
   isWhatsapp: boolean;
   whatsappMessage?: string;
   placement: 'hero' | 'feed' | 'banner';
+  orderIndex?: number;
   startDate?: string;
   endDate?: string;
   isActive: boolean;
@@ -172,6 +181,7 @@ export interface AdminLog {
   targetType: string;
   targetId: string;
   reason?: string;
+  details?: any;
   createdAt: string;
 }
 

@@ -193,37 +193,42 @@ function MainApp() {
     const supabase = getSupabase();
     if (!supabase) return;
 
+    const processSupabaseUser = (u: any) => {
+      const email = (u.email || '').toLowerCase().trim();
+      const allUsers = store.getAllUsers();
+      const existing = allUsers.find(
+        user => user.id === 'supabase_' + u.id || (email && user.email.toLowerCase() === email)
+      );
+
+      const userProfile: UserProfile = {
+        id: 'supabase_' + u.id,
+        email: email,
+        fullName: u.user_metadata?.full_name || u.user_metadata?.name || email.split('@')[0] || 'Пользователь Google',
+        avatarUrl: u.user_metadata?.avatar_url || u.user_metadata?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(email || 'User')}&background=059669&color=fff&rounded=true`,
+        role: existing?.role || 'worker',
+        // Default Google login is strictly 'user', preserving owner/admin if granted
+        accountRole: existing?.accountRole || (existing?.isOwner ? 'owner' : existing?.isAdmin ? 'admin' : 'user'),
+        isOwner: Boolean(existing?.isOwner || existing?.accountRole === 'owner'),
+        isAdmin: Boolean(existing?.isAdmin || existing?.isOwner || existing?.accountRole === 'owner' || existing?.accountRole === 'admin'),
+        isBlocked: Boolean(existing?.isBlocked),
+        blockedReason: existing?.blockedReason,
+        blockedAt: existing?.blockedAt,
+        countryCode: existing?.countryCode || 'TJ',
+        city: existing?.city || 'Душанбе',
+        createdAt: existing?.createdAt || new Date().toISOString(),
+      };
+      store.setCurrentUser(userProfile);
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const u = session.user;
-        const userProfile: UserProfile = {
-          id: 'supabase_' + u.id,
-          email: u.email || '',
-          fullName: u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Пользователь Google',
-          avatarUrl: u.user_metadata?.avatar_url || u.user_metadata?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.email || 'User')}&background=059669&color=fff&rounded=true`,
-          role: 'worker',
-          countryCode: 'TJ',
-          city: 'Душанбе',
-          createdAt: new Date().toISOString(),
-        };
-        store.setCurrentUser(userProfile);
+        processSupabaseUser(session.user);
       }
     });
 
     const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const u = session.user;
-        const userProfile: UserProfile = {
-          id: 'supabase_' + u.id,
-          email: u.email || '',
-          fullName: u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Пользователь Google',
-          avatarUrl: u.user_metadata?.avatar_url || u.user_metadata?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.email || 'User')}&background=059669&color=fff&rounded=true`,
-          role: 'worker',
-          countryCode: 'TJ',
-          city: 'Душанбе',
-          createdAt: new Date().toISOString(),
-        };
-        store.setCurrentUser(userProfile);
+        processSupabaseUser(session.user);
       }
     });
 
@@ -912,6 +917,10 @@ function MainApp() {
           currentUser={currentUser}
           onClose={handleCloseProfile}
           onLogout={() => {
+            const supabase = getSupabase();
+            if (supabase) {
+              supabase.auth.signOut().catch(() => {});
+            }
             store.setCurrentUser(null);
             handleCloseProfile();
           }}

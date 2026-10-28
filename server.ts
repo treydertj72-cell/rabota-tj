@@ -24,7 +24,7 @@ app.post('/api/admin/verify', (req, res) => {
   if (!secretKey) {
     return res.status(400).json({ success: false, message: 'Ключ администратора не указан' });
   }
-  if (secretKey === ADMIN_SECRET || secretKey === 'admin2026' || secretKey === 'admin_tj_2026_secure') {
+  if (secretKey === ADMIN_SECRET || secretKey === 'rabota_tj_admin_2026_secure' || secretKey === 'admin_tj_2026_secure') {
     const token = 'adm_sec_' + Buffer.from(ADMIN_SECRET).toString('base64');
     return res.json({
       success: true,

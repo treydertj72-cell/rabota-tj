@@ -167,15 +167,17 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Admin shortcut button if admin */}
-          <button
-            onClick={onOpenAdmin}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-            title="Панель администратора"
-          >
-            <Shield className="w-3.5 h-3.5 text-slate-500" />
-            <span>{t('adminPanel')}</span>
-          </button>
+          {/* Admin shortcut button visible only for owner or admin */}
+          {(currentUser?.isOwner || currentUser?.isAdmin || currentUser?.accountRole === 'owner' || currentUser?.accountRole === 'admin') && (
+            <button
+              onClick={onOpenAdmin}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer"
+              title="Панель администратора"
+            >
+              <Shield className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{currentUser?.isOwner || currentUser?.accountRole === 'owner' ? 'Панель владельца' : t('adminPanel')}</span>
+            </button>
+          )}
 
           {/* Publish Ad CTA Button */}
           <button
