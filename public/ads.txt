@@ -1,0 +1,4 @@
+# Google AdSense ads.txt для сайта «РАБОТА ТҶ»
+# После регистрации в Google AdSense и получения Publisher ID,
+# замените pub-0000000000000000 на ваш реальный идентификатор паблишера Google AdSense:
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
