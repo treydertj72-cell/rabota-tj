@@ -88,6 +88,8 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const [imageUrl, setImageUrl] = useState(initialListing?.images?.[0] || savedDraft?.imageUrl || '');
   const [imagePreview, setImagePreview] = useState(initialListing?.images?.[0] || savedDraft?.imageUrl || '');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // Auto-save draft on every change
   useEffect(() => {
@@ -199,8 +201,9 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isSuccess) return;
     setErrorMsg('');
 
     let finalTitle = title.trim();
@@ -277,18 +280,50 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
       taxiDetails,
     };
 
-    if (initialListing) {
-      store.updateListing(initialListing.id, listingData);
-      onAdCreated({ ...initialListing, ...listingData });
-    } else {
-      try {
-        localStorage.removeItem(DRAFT_KEY);
-      } catch {}
-      const created = store.addListing(listingData);
-      onAdCreated(created);
-    }
+    setIsSubmitting(true);
 
-    onClose();
+    try {
+      // Short delay to indicate submission in progress and lock the UI against duplicate taps
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      let savedListing: Listing;
+
+      if (initialListing) {
+        const ok = store.updateListing(initialListing.id, listingData);
+        if (!ok) {
+          throw new Error('Не удалось обновить объявление в базе данных');
+        }
+        savedListing = { ...initialListing, ...listingData, updatedAt: new Date().toISOString() };
+      } else {
+        savedListing = store.addListing(listingData);
+        if (!savedListing || !savedListing.id) {
+          throw new Error('Не удалось сохранить объявление в хранилище');
+        }
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch {}
+      }
+
+      // Verification that listing is indeed stored
+      const checkStored = store.getListings().find((l) => l.id === savedListing.id);
+      if (!checkStored) {
+        throw new Error('Ошибка проверки: объявление не найдено в списке сохраненных');
+      }
+
+      // Switch to success state
+      setIsSubmitting(false);
+      setIsSuccess(true);
+
+      // Notify parent and auto-close after 800ms
+      setTimeout(() => {
+        onAdCreated(savedListing);
+      }, 800);
+    } catch (err: any) {
+      console.error('Publication error:', err);
+      setIsSubmitting(false);
+      setIsSuccess(false);
+      setErrorMsg(err?.message || 'Не удалось сохранить объявление. Пожалуйста, проверьте данные и повторите попытку.');
+    }
   };
 
   return (
@@ -357,17 +392,37 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
           </div>
         )}
 
-        {/* Scrollable Form */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4">
-          
-          {errorMsg && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
+        {/* If successfully published, display clear success feedback */}
+        {isSuccess ? (
+          <div className="p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-4 my-auto animate-in fade-in zoom-in-95">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
+              <Check className="w-9 h-9 stroke-[3]" />
             </div>
-          )}
+            <div className="space-y-1.5">
+              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                ✅ Объявление успешно опубликовано!
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
+                Ваше объявление сохранено и уже отображается в общей ленте.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200/60">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>Обновляем ленту...</span>
+            </div>
+          </div>
+        ) : (
+          /* Scrollable Form */
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4">
+            
+            {errorMsg && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
-          {/* Ad Type Selector (6 modes) */}
+            {/* Ad Type Selector (6 modes) */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
               Тип публикации *
@@ -922,19 +977,40 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              disabled={isSubmitting}
+              className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer disabled:opacity-40"
             >
               Отмена
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 rounded-xl shadow-md transition-all cursor-pointer"
+              disabled={isSubmitting || isSuccess}
+              className={`px-6 py-2.5 text-xs font-bold text-white rounded-xl shadow-md transition-all flex items-center justify-center gap-2 min-w-[170px] ${
+                isSubmitting || isSuccess
+                  ? 'bg-emerald-400 cursor-not-allowed opacity-90'
+                  : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 cursor-pointer'
+              }`}
             >
-              {initialListing ? 'Сохранить изменения' : 'Опубликовать объявление'}
+              {isSubmitting ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Публикуем…</span>
+                </>
+              ) : isSuccess ? (
+                <>
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>Опубликовано!</span>
+                </>
+              ) : initialListing ? (
+                'Сохранить изменения'
+              ) : (
+                'Опубликовать объявление'
+              )}
             </button>
           </div>
 
         </form>
+        )}
 
       </div>
     </div>

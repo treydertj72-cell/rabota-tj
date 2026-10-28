@@ -18,7 +18,7 @@ import { AdminPanelModal } from './components/AdminPanelModal';
 import { SystemStatusModal } from './components/SystemStatusModal';
 import { BottomNav } from './components/BottomNav';
 import { COUNTRIES } from './data/locations';
-import { PlusCircle, Search, Shield, Globe, MessageCircle, Info, CheckCircle2, Car, Sparkles, Briefcase, Hammer, UserCheck } from 'lucide-react';
+import { PlusCircle, Search, Shield, Globe, MessageCircle, Info, CheckCircle2, Car, Sparkles, Briefcase, Hammer, UserCheck, X } from 'lucide-react';
 
 function MainApp() {
   const { t } = useI18n();
@@ -59,6 +59,7 @@ function MainApp() {
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [chatTarget, setChatTarget] = useState<{ id: string; name: string; avatarUrl?: string; listing?: Listing } | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
 
   // Navigation & Scroll Restoration Refs
   const savedScrollPosRef = useRef<number>(0);
@@ -387,6 +388,33 @@ function MainApp() {
     }
   };
 
+  const handleListingCreated = (_newAd: Listing) => {
+    // 1. Immediately reload all listings to ensure fresh state
+    const freshListings = store.getListings();
+    setAllListings(freshListings);
+
+    // 2. Close create modal
+    setCreateModalOpen(false);
+    setEditingListing(null);
+
+    // 3. Clean up modal=create from history URL without polluting history stack
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('modal') === 'create') {
+      params.delete('modal');
+      const cleanUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+      window.history.replaceState({ type: 'root', section: activeSection }, '', cleanUrl);
+    }
+
+    // 4. Show success toast notification
+    setSuccessToast('✅ Объявление успешно опубликовано!');
+    setTimeout(() => {
+      setSuccessToast(null);
+    }, 5000);
+
+    // 5. Scroll to top so user sees their new listing at the top of the feed
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleOpenProfile = (pushHistory = true) => {
     if (!currentUser) {
       handleOpenAuth();
@@ -532,6 +560,23 @@ function MainApp() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 pb-20 md:pb-0">
       
+      {/* Global Success Notification Toast */}
+      {successToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92%] sm:w-auto bg-emerald-600 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2.5 font-bold text-xs sm:text-sm">
+            <CheckCircle2 className="w-5 h-5 text-emerald-200 shrink-0" />
+            <span>{successToast}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessToast(null)}
+            className="text-emerald-100 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* 1. Header (Brand Wordmark with Ҷ + Desktop Navigation + Controls) */}
       <Header
         currentUser={currentUser}
@@ -793,9 +838,7 @@ function MainApp() {
           onClose={handleCloseCreateModal}
           currentUser={currentUser}
           defaultType={createModalDefaultType}
-          onAdCreated={(newAd) => {
-            handleOpenListingDetail(newAd);
-          }}
+          onAdCreated={handleListingCreated}
           initialListing={editingListing}
         />
       )}
