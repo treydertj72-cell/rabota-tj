@@ -95,13 +95,13 @@ export const SystemStatusModal: React.FC<SystemStatusModalProps> = ({ onClose, o
 
               <div className="bg-white/80 p-2.5 rounded-xl border border-amber-100">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-slate-900">2. Вход через Google (OAuth)</span>
-                  <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                    Быстрый профиль + Supabase OAuth
+                  <span className="font-bold text-slate-900">2. Вход через Google (Изолированные аккаунты & OAuth)</span>
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                    Изоляция активна
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Авторизация работает в 1 клик через быстрый профиль без требования обязательного телефона. Для работы официального всплывающего окна Google OAuth в Supabase нужно указать Client ID из Google Cloud Console.
+                  Каждый пользователь входит исключительно под своим собственным аккаунтом. Для работы официального всплывающего окна Google OAuth укажите Google Web Client ID в Панели администратора или в Vercel (<code className="font-mono text-emerald-700">VITE_GOOGLE_CLIENT_ID</code>).
                 </p>
               </div>
 

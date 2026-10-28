@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { I18nProvider, useI18n } from './context/I18nContext';
 import { Listing, UserProfile, CountryCode, OwnerAd, MainSectionType, ListingType } from './types';
 import { store, subscribeStore } from './lib/store';
+import { getSupabase } from './lib/supabase';
 import { Header } from './components/Header';
 import { SectionNav } from './components/SectionNav';
 import { HeroSection } from './components/HeroSection';
@@ -185,6 +186,50 @@ function MainApp() {
       setOwnerAds(store.getOwnerAds());
     });
     return unsub;
+  }, []);
+
+  // Supabase Auth session listener for OAuth redirect flows
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const u = session.user;
+        const userProfile: UserProfile = {
+          id: 'supabase_' + u.id,
+          email: u.email || '',
+          fullName: u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Пользователь Google',
+          avatarUrl: u.user_metadata?.avatar_url || u.user_metadata?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.email || 'User')}&background=059669&color=fff&rounded=true`,
+          role: 'worker',
+          countryCode: 'TJ',
+          city: 'Душанбе',
+          createdAt: new Date().toISOString(),
+        };
+        store.setCurrentUser(userProfile);
+      }
+    });
+
+    const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const u = session.user;
+        const userProfile: UserProfile = {
+          id: 'supabase_' + u.id,
+          email: u.email || '',
+          fullName: u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Пользователь Google',
+          avatarUrl: u.user_metadata?.avatar_url || u.user_metadata?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.email || 'User')}&background=059669&color=fff&rounded=true`,
+          role: 'worker',
+          countryCode: 'TJ',
+          city: 'Душанбе',
+          createdAt: new Date().toISOString(),
+        };
+        store.setCurrentUser(userProfile);
+      }
+    });
+
+    return () => {
+      authSub?.subscription?.unsubscribe();
+    };
   }, []);
 
   // Compute listing counts for the 6 sections dynamically
