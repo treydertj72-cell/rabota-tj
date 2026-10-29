@@ -74,15 +74,16 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const reviews = store.getReviews(listing.userId);
 
   const handleShare = () => {
+    const shareUrl = `${window.location.origin}/?ad=${listing.id}`;
     if (navigator.share) {
       navigator.share({
         title: `${listing.title} — РАБОТА ТҶ`,
-        text: `Объявление на сайте РАБОТА ТҶ: ${listing.title}`,
-        url: window.location.href,
+        text: `Объявление на платформе РАБОТА ТҶ: ${listing.title}`,
+        url: shareUrl,
       }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Ссылка скопирована в буфер обмена!');
+      navigator.clipboard.writeText(shareUrl);
+      alert('Прямая ссылка на вакансию скопирована!');
     }
   };
 
@@ -190,8 +191,27 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
           
+          {/* Quick catalog shortcut banner for direct-link visitors from WhatsApp/Telegram */}
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/90 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                ТҶ
+              </div>
+              <div className="text-xs">
+                <span className="font-bold text-slate-900 block">Платформа объявлений «РАБОТА ТҶ»</span>
+                <span className="text-emerald-800 text-[11px]">Тысячи вакансий и мастеров во всех странах СНГ</span>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all shrink-0 cursor-pointer active:scale-95"
+            >
+              Все вакансии
+            </button>
+          </div>
+
           {/* Images */}
           {listing.images && listing.images.length > 0 && (
             <div className="rounded-2xl overflow-hidden bg-slate-100 max-h-72 flex items-center justify-center">
@@ -503,16 +523,16 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
           )}
 
           {/* Bottom Back to List Button */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 flex-wrap">
             <button
               onClick={onClose}
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 rounded-xl transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-emerald-950 bg-emerald-100 hover:bg-emerald-200 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
             >
-              <ArrowLeft className="w-4 h-4 text-emerald-600" />
-              <span>{t('backToList')}</span>
+              <ArrowLeft className="w-4 h-4 text-emerald-700" />
+              <span>Перейти ко всем вакансиям</span>
             </button>
-            <span className="text-[11px] text-slate-400">
-              РАБОТА ТҶ
+            <span className="text-[11px] text-slate-400 font-medium">
+              «РАБОТА ТҶ» — единая платформа СНГ
             </span>
           </div>
 

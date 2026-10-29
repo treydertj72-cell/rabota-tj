@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">РАБОТА ТҶ</string>
+    <string name="title_activity_main">РАБОТА ТҶ</string>
+    <string name="package_name">org.rabotatj.app</string>
+    <string name="custom_url_scheme">org.rabotatj.app</string>
+</resources>

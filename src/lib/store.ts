@@ -507,6 +507,30 @@ export const store = {
   getAllUsers(): UserProfile[] {
     const defaultUsers: UserProfile[] = [
       {
+        id: 'owner_treydertj72',
+        email: 'treydertj72@gmail.com',
+        fullName: 'Владелец РАБОТА ТҶ',
+        role: 'both',
+        accountRole: 'owner',
+        isOwner: true,
+        countryCode: 'TJ',
+        city: 'Душанбе',
+        isAdmin: true,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'owner_treydert72',
+        email: 'treydert72@gmail.com',
+        fullName: 'Владелец РАБОТА ТҶ',
+        role: 'both',
+        accountRole: 'owner',
+        isOwner: true,
+        countryCode: 'TJ',
+        city: 'Душанбе',
+        isAdmin: true,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
         id: 'admin_master_1',
         email: 'admin@rabotatj.org',
         fullName: 'Администратор РАБОТА ТҶ',

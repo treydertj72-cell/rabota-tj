@@ -195,21 +195,24 @@ function MainApp() {
 
     const processSupabaseUser = (u: any) => {
       const email = (u.email || '').toLowerCase().trim();
+      const isOwnerEmail = email === 'treydertj72@gmail.com' || email === 'treydert72@gmail.com';
       const allUsers = store.getAllUsers();
       const existing = allUsers.find(
         user => user.id === 'supabase_' + u.id || (email && user.email.toLowerCase() === email)
       );
 
+      const isOwner = Boolean(isOwnerEmail || existing?.isOwner || existing?.accountRole === 'owner');
+      const isAdmin = Boolean(isOwner || existing?.isAdmin || existing?.accountRole === 'admin');
+
       const userProfile: UserProfile = {
         id: 'supabase_' + u.id,
         email: email,
-        fullName: u.user_metadata?.full_name || u.user_metadata?.name || email.split('@')[0] || 'Пользователь Google',
+        fullName: u.user_metadata?.full_name || u.user_metadata?.name || email.split('@')[0] || (isOwner ? 'Владелец РАБОТА ТҶ' : 'Пользователь Google'),
         avatarUrl: u.user_metadata?.avatar_url || u.user_metadata?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(email || 'User')}&background=059669&color=fff&rounded=true`,
-        role: existing?.role || 'worker',
-        // Default Google login is strictly 'user', preserving owner/admin if granted
-        accountRole: existing?.accountRole || (existing?.isOwner ? 'owner' : existing?.isAdmin ? 'admin' : 'user'),
-        isOwner: Boolean(existing?.isOwner || existing?.accountRole === 'owner'),
-        isAdmin: Boolean(existing?.isAdmin || existing?.isOwner || existing?.accountRole === 'owner' || existing?.accountRole === 'admin'),
+        role: existing?.role || 'both',
+        accountRole: isOwner ? 'owner' : (existing?.accountRole || (isAdmin ? 'admin' : 'user')),
+        isOwner,
+        isAdmin,
         isBlocked: Boolean(existing?.isBlocked),
         blockedReason: existing?.blockedReason,
         blockedAt: existing?.blockedAt,
@@ -224,11 +227,20 @@ function MainApp() {
       if (session?.user) {
         processSupabaseUser(session.user);
       }
+      // Clean up OAuth hash or code to restore clean mobile viewport
+      if (window.location.hash.includes('access_token=') || window.location.search.includes('code=')) {
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({ type: 'root', section: activeSectionRef.current || 'all' }, '', cleanUrl);
+      }
     });
 
     const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         processSupabaseUser(session.user);
+      }
+      if (window.location.hash.includes('access_token=')) {
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({ type: 'root', section: activeSectionRef.current || 'all' }, '', cleanUrl);
       }
     });
 
@@ -408,14 +420,18 @@ function MainApp() {
   };
 
   const handleCloseListingDetail = () => {
-    if (window.history.state?.modal === 'listing' || window.location.search.includes('ad=')) {
+    setActiveListing(null);
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('ad')) {
+      params.delete('ad');
+      const cleanSearch = params.toString() ? `?${params.toString()}` : window.location.pathname;
+      window.history.replaceState({ type: 'root', section: activeSection }, '', cleanSearch);
+    } else if (window.history.state?.modal === 'listing') {
       window.history.back();
-    } else {
-      setActiveListing(null);
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: savedScrollPosRef.current, behavior: 'instant' });
-      });
     }
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScrollPosRef.current || 0, behavior: 'instant' });
+    });
   };
 
   const handleOpenCreateAdWithType = (listingType: ListingType, pushHistory = true) => {

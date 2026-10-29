@@ -1,0 +1,9 @@
+{
+	"appId": "org.rabotatj.app",
+	"appName": "РАБОТА ТҶ",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"packageClassList": []
+}
